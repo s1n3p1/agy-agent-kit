@@ -1,0 +1,42 @@
+name: validate
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check shell syntax
+        run: |
+          bash -n install.sh
+          bash -n verify.sh
+          bash -n uninstall.sh
+      - name: Check bootstrap markers
+        run: |
+          grep -Fq '<!-- AGY-AGENT-KIT:BEGIN -->' config/GEMINI.block.md
+          grep -Fq '<!-- AGY-AGENT-KIT:END -->' config/GEMINI.block.md
+          grep -Fq '@@SHARED_IMPORTS@@' config/GEMINI.block.md
+      - name: Check core skills
+        run: |
+          set -e
+          for f in skills/*/SKILL.md; do
+            head -n 1 "$f" | grep -Fxq -- '---'
+            grep -Eq '^name: agy-kit-[a-z0-9-]+$' "$f"
+            grep -Eq '^description: .+' "$f"
+          done
+      - name: Check routed rules
+        run: |
+          test -f config/rules/02-session.md
+          test -f config/rules/10-cli-server.md
+          test -f config/rules/11-git.md
+          test -f config/rules/20-coding.md
+          test -f config/rules/21-tech-stack.md
+          test -f config/rules/30-security.md
+          test -f config/rules/40-language-ko.md
+          test -f config/rules/50-memory.md
