@@ -1,52 +1,58 @@
 # AGY Agent Kit
 
-Defensive global rules and reusable development skills for **Google Antigravity CLI (`agy`)**.
+**Google Antigravity CLI (`agy`)**를 위한 방어적인 전역 규칙과 재사용 가능한 개발 Skill 모음입니다.
 
-The kit assumes that an agent can forget instructions, skip a useful skill, infer too much from incomplete evidence, or declare work complete before verification. It keeps the critical rules always loaded and routes longer task-specific rules and skills only when needed.
+이 Kit은 에이전트가 지침을 잊거나, 유용한 Skill을 건너뛰거나, 불완전한 근거만 보고 과도하게 추론하거나, 충분한 검증 없이 작업이 끝났다고 판단할 수 있다는 전제에서 설계했습니다. 꼭 필요한 핵심 규칙은 항상 로드하고, 길고 상황별로 필요한 규칙과 Skill은 해당 작업에서만 불러오도록 구성합니다.
 
-## Install
+## 설치
 
-Requirements: macOS or Linux, `agy`, `curl`, and a normal POSIX shell. `git` is recommended for fallback installation of upstream skills.
+요구사항: macOS 또는 Linux, `agy`, `curl`, 일반적인 POSIX shell. Upstream Skill의 fallback 설치를 위해 `git` 사용을 권장합니다.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/s1n3p1/agy-agent-kit/main/install.sh | bash
 ```
 
-Core rules and skills only, without the recommended upstream plugins/skills:
+추천 upstream plugin/skill 없이 핵심 규칙과 Skill만 설치하려면:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/s1n3p1/agy-agent-kit/main/install.sh | bash -s -- --no-plugins
 ```
 
-After installation, **start a new `agy` session** so the runtime discovers the new configuration.
+설치 후에는 runtime이 새 설정을 발견할 수 있도록 **새 `agy` 세션을 시작하세요.**
 
-## What it installs
+## 설치되는 항목
 
-### Always-loaded global policy
+### 항상 로드되는 전역 정책
 
-The installer adds one clearly marked AGY Agent Kit block to `~/.gemini/GEMINI.md` instead of replacing the user's existing file. If these shared instruction files already exist, the block imports them too:
+설치기는 사용자의 기존 `~/.gemini/GEMINI.md`를 통째로 덮어쓰지 않고, AGY Agent Kit가 관리하는 구분된 block 하나만 추가합니다. 아래 공용 지침 파일이 이미 존재하면 해당 block에서 함께 import합니다.
 
 - `~/.agents/AGENTS.md`
 - `~/AGENTS.md`
 
-The always-loaded block contains the core behavior, evidence requirements, repository-first policy, explicit rule router, skill router, and completion gate.
+항상 로드되는 block에는 핵심 행동 규칙, evidence 요구사항, repository-first 정책, 명시적 Rule router, Skill router, completion gate가 포함됩니다.
 
-### Situational rules
+### 상황별 Rule
 
-Installed under `~/.gemini/config/agy-agent-kit/rules/`:
+다음 경로에 설치됩니다.
 
-- session and scope discipline
-- CLI/server operations
-- Git safety
-- coding quality
-- technology/version handling
-- security and irreversible operations
-- Korean output guidance
-- durable memory guidance
+```text
+~/.gemini/config/agy-agent-kit/rules/
+```
 
-### Core skills
+포함 내용:
 
-Installed under `~/.gemini/config/skills/` with namespaced names to avoid collisions:
+- 세션 및 작업 범위 관리
+- CLI/서버 운영
+- Git 안전 규칙
+- 코딩 품질
+- 기술 스택 및 버전 처리
+- 보안 및 되돌리기 어려운 작업
+- 한국어 출력 가이드
+- 장기 기억 관리 가이드
+
+### 핵심 Skill
+
+다른 Skill과 이름이 충돌하지 않도록 namespace를 붙여 `~/.gemini/config/skills/` 아래에 설치합니다.
 
 - `agy-kit-bug-investigation`
 - `agy-kit-feature-implementation`
@@ -55,65 +61,73 @@ Installed under `~/.gemini/config/skills/` with namespaced names to avoid collis
 - `agy-kit-research`
 - `agy-kit-server-ops`
 
-### Recommended upstream integrations
+### 추천 Upstream Integration
 
-By default, the installer also attempts to install or enable five useful Google/Chrome integrations from their upstream repositories:
+기본 설치에서는 Google/Chrome의 공식 upstream repository에서 유용한 Integration 5종도 설치하거나 활성화합니다.
 
 - Chrome DevTools
 - Modern Web Guidance
-- Gemini API skills
-- Google Antigravity SDK skill
-- Google Maps Platform skill
+- Gemini API Skills
+- Google Antigravity SDK Skill
+- Google Maps Platform Skill
 
-Where an upstream repository is directly installable as an AGY plugin, the installer uses `agy plugin install`. If that is unavailable for a skills-only repository, it falls back to copying the upstream skill into Antigravity's global skill directory.
+Upstream repository가 AGY plugin으로 직접 설치 가능한 경우 `agy plugin install`을 사용합니다. Skill만 제공하는 repository 등에서 plugin 설치가 지원되지 않으면 해당 upstream Skill을 Antigravity의 전역 Skill 경로로 복사하는 fallback 방식을 사용합니다.
 
-Existing unrelated plugins, skills, settings, authentication state, caches, and built-ins are not removed.
+기존에 사용자가 설치한 다른 plugin, Skill, 설정, 인증 상태, cache, built-in 파일은 삭제하지 않습니다.
 
-## Philosophy
+## 설계 철학
 
-The configuration uses three layers:
+설정은 세 계층으로 구성됩니다.
 
-1. **Always loaded:** compact non-negotiable rules in `GEMINI.md`.
-2. **On demand:** explicit task routing to longer rule files.
-3. **Procedural:** skills for recurring engineering workflows.
+1. **Always loaded:** `GEMINI.md`에 들어가는 짧고 반드시 지켜야 하는 핵심 규칙
+2. **On demand:** 작업 종류에 따라 명시적으로 routing되는 상세 Rule
+3. **Procedural:** 반복되는 개발 작업 절차를 담당하는 Skill
 
-This deliberately does not require a `GEMINI.md` or `.agents/` directory in every project.
+Gemini가 항상 필요한 규칙과 Skill을 스스로 정확하게 선택할 것이라고 가정하지 않습니다. 대신 최소한의 핵심 정책은 항상 주입하고, 나머지는 명시적인 routing과 progressive disclosure로 필요한 순간에만 불러옵니다.
 
-## Verify
+또한 모든 프로젝트마다 `GEMINI.md`나 `.agents/` 디렉터리를 만들어야 하는 구조를 사용하지 않습니다.
+
+## 검증
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/s1n3p1/agy-agent-kit/main/verify.sh | bash
 ```
 
-Then open a new AGY session and ask it to report the global rule files and custom skills discovered by the current runtime.
+그다음 새 AGY 세션을 열고, 현재 runtime이 발견한 global Rule 파일과 custom Skill을 직접 확인하면 됩니다.
 
-## Update
+## 업데이트
 
-Run the same installation command again. The installer is intended to be idempotent and replaces only files managed by AGY Agent Kit.
+설치 명령을 다시 실행하면 됩니다.
 
-## Uninstall
+```bash
+curl -fsSL https://raw.githubusercontent.com/s1n3p1/agy-agent-kit/main/install.sh | bash
+```
+
+설치기는 반복 실행해도 같은 결과가 나오도록 구성했으며, AGY Agent Kit가 관리하는 파일만 교체합니다.
+
+## 제거
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/s1n3p1/agy-agent-kit/main/uninstall.sh | bash
 ```
 
-Uninstall removes only the AGY Agent Kit marker block, routed rule directory, and six namespaced core skills. Upstream plugins/skills are intentionally left installed because they may also be used independently.
+제거 스크립트는 AGY Agent Kit marker block, 상황별 Rule 디렉터리, namespace가 붙은 핵심 Skill 6개만 제거합니다. Upstream plugin/skill은 AGY Agent Kit와 별개로 사용할 수도 있으므로 의도적으로 남겨둡니다.
 
-## Backups
+## 백업
 
-Before changing managed configuration, the installer writes timestamped backups under:
+관리 대상 설정을 변경하기 전에 기존 파일을 timestamp별로 다음 경로에 백업합니다.
 
 ```text
 ~/.gemini/agy-agent-kit-backups/
 ```
 
-## Notes
+## 참고
 
-- AGY Agent Kit does not install Antigravity CLI itself.
-- It does not modify Codex, Claude Code, or other agent configuration files.
-- It does not create project-local AI configuration by default.
-- Hooks are intentionally not enabled yet; mechanical enforcement should be added only after safe hook behavior is validated across AGY versions.
+- AGY Agent Kit 자체는 Antigravity CLI를 설치하지 않습니다.
+- Codex, Claude Code 등 다른 에이전트의 설정 파일은 수정하지 않습니다.
+- 기본적으로 프로젝트별 AI 설정 파일을 생성하지 않습니다.
+- Hook은 아직 활성화하지 않습니다. Hook을 통한 기계적 강제는 AGY 버전 간 동작을 충분히 검증한 뒤 추가하는 것이 안전합니다.
 
-## License
+## 라이선스
 
 MIT
