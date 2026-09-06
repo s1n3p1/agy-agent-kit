@@ -6,6 +6,7 @@ REF="${AGY_AGENT_KIT_REF:-main}"
 RAW_BASE="https://raw.githubusercontent.com/${REPO}/${REF}"
 GEMINI_DIR="${HOME}/.gemini"
 CONFIG_DIR="${GEMINI_DIR}/config"
+PLUGINS_DIR="${CONFIG_DIR}/plugins"
 KIT_DIR="${CONFIG_DIR}/agy-agent-kit"
 RULES_DIR="${KIT_DIR}/rules"
 SKILLS_DIR="${CONFIG_DIR}/skills"
@@ -99,7 +100,7 @@ for s in \
 tmp_existing="$(mktemp)"
 tmp_block="$(mktemp)"
 tmp_final="$(mktemp)"
-trap 'rm -f "$tmp_existing" "$tmp_block" "$tmp_final"' EXIT
+trap 'rm -f "$tmp_existing" "$tmp_block" "$tmp_final" "${tmp_block}.rendered"' EXIT
 
 remove_managed_block "$GEMINI_DIR/GEMINI.md" "$tmp_existing"
 fetch "config/GEMINI.block.md" "$tmp_block"
@@ -121,7 +122,6 @@ cat "$tmp_existing" > "$tmp_final"
 if [ -s "$tmp_existing" ]; then printf '\n' >> "$tmp_final"; fi
 cat "${tmp_block}.rendered" >> "$tmp_final"
 mv "$tmp_final" "$GEMINI_DIR/GEMINI.md"
-rm -f "${tmp_block}.rendered"
 
 # Install routed rules.
 for f in \
@@ -147,6 +147,21 @@ for s in \
     mkdir -p "$SKILLS_DIR/$s"
     fetch "skills/$s/SKILL.md" "$SKILLS_DIR/$s/SKILL.md"
   done
+
+enable_existing_plugin() {
+  local label="$1"
+  shift
+  local id
+  for id in "$@"; do
+    if [ -d "$PLUGINS_DIR/$id" ]; then
+      agy plugin enable "$id" >/dev/null 2>&1 || true
+      echo "→ $label"
+      echo "  existing plugin enabled: $id"
+      return 0
+    fi
+  done
+  return 1
+}
 
 install_plugin_or_fallback() {
   local label="$1"
@@ -190,12 +205,14 @@ if [ "$NO_PLUGINS" -eq 0 ]; then
   echo
   echo "Installing/enabling recommended upstream integrations..."
 
+  enable_existing_plugin "Modern Web Guidance" modern-web-guidance-plugin modern-web-guidance || \
   install_plugin_or_fallback \
     "Modern Web Guidance" \
     "https://github.com/GoogleChrome/modern-web-guidance" \
     "skills/modern-web-guidance:modern-web-guidance" \
     "skills/chrome-extensions:chrome-extensions"
 
+  enable_existing_plugin "Gemini API skills" gemini-api gemini-skills || \
   install_plugin_or_fallback \
     "Gemini API skills" \
     "https://github.com/google-gemini/gemini-skills" \
@@ -204,6 +221,7 @@ if [ "$NO_PLUGINS" -eq 0 ]; then
     "skills/gemini-interactions-api:gemini-interactions-api" \
     "skills/gemini-omni-flash-api:gemini-omni-flash-api"
 
+  enable_existing_plugin "Chrome DevTools" chrome-devtools-plugin chrome-devtools chrome-devtools-mcp || \
   install_plugin_or_fallback \
     "Chrome DevTools" \
     "https://github.com/ChromeDevTools/chrome-devtools-mcp" \
@@ -213,18 +231,20 @@ if [ "$NO_PLUGINS" -eq 0 ]; then
     "skills/memory-leak-debugging:memory-leak-debugging" \
     "skills/troubleshooting:troubleshooting"
 
+  enable_existing_plugin "Google Antigravity SDK" google-antigravity-sdk || \
   install_plugin_or_fallback \
     "Google Antigravity SDK" \
     "https://github.com/Google-Antigravity/antigravity-sdk-python" \
     "skills/google-antigravity-sdk:google-antigravity-sdk"
 
+  enable_existing_plugin "Google Maps Platform" google_maps_platform google-maps-platform || \
   install_plugin_or_fallback \
     "Google Maps Platform" \
     "https://github.com/googlemaps/agent-skills" \
     "skills/google-maps-platform:google-maps-platform"
 fi
 
-# Store install metadata without touching AGY's own settings/config.json.
+# Store install metadata without touching AGY's own settings/config.json directly.
 cat > "$KIT_DIR/install-info" <<EOF
 repo=$REPO
 ref=$REF
